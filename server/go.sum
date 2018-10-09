@@ -1,0 +1,6 @@
+github.com/gorilla/websocket v1.4.0 h1:WDFjx/TMzVgy9VdMMQi2K2Emtwi2QcUQsztZ/zLaH/Q=
+github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
+github.com/jessevdk/go-flags v1.4.0 h1:4IU2WS7AumrZ/40jfhf4QVDMsQwqA7VEHozFRrGARJA=
+github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
+github.com/telenordigital/nbiot-go v0.0.0-20181009151002-df4298400525 h1:KvkSRKxw0EKnroirsV381OOsQPvDs/z37+9j4RwzIow=
+github.com/telenordigital/nbiot-go v0.0.0-20181009151002-df4298400525/go.mod h1:yMF8A+MyEU+nm0GCBhOqxMiqFtzg5kqyjsh/JWCy21M=

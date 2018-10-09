@@ -1,0 +1,5 @@
+# Server
+
+This server monitors a device collection and sends an alert when it detects that device failed to send a mesage or when it receives a duplicate message.
+
+Set the `TELENOR_NBIOT_TOKEN` environment variable to your API token before running the server.

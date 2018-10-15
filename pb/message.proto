@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package nbiot_e2e;
+
+option go_package = "github.com/telenordigital/nbiot-e2e/server/pb";
+
+import "nanopb/generator/proto/nanopb.proto";
+
+message Message {
+	oneof message {
+		PingMessage ping_message = 1;
+	}
+}
+
+message PingMessage {
+	uint32 sequence = 1;
+	string commit_hash = 2 [(nanopb).max_size = 40];
+	float rssi = 3;
+}

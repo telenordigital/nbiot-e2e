@@ -1,0 +1,7 @@
+# Device
+
+## Nanopb
+
+The device encodes its messages as Protocol Buffers using the [nanopb](http://jpa.kapsi.fi/nanopb/) C library.
+
+Copy the [pb/nanopb](pb/nanopb) directory into your Arduino libraries directory to satisfy this dependency.

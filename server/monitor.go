@@ -6,7 +6,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/telenordigital/nbiot-go"
+
+	"github.com/telenordigital/nbiot-e2e/server/pb"
 )
 
 type Monitor struct {
@@ -15,8 +18,13 @@ type Monitor struct {
 	mailer            *Mailer
 	nbiot             *nbiot.Client
 
-	mu            sync.Mutex
-	lastHeardFrom map[string]time.Time
+	mu         sync.Mutex
+	deviceInfo map[string]deviceInfo
+}
+
+type deviceInfo struct {
+	lastHeardFrom time.Time
+	sequence      uint32
 }
 
 func NewMonitor(collectionID string, inactivityTimeout time.Duration, mailer *Mailer) (*Monitor, error) {
@@ -30,7 +38,7 @@ func NewMonitor(collectionID string, inactivityTimeout time.Duration, mailer *Ma
 		inactivityTimeout: inactivityTimeout,
 		mailer:            mailer,
 		nbiot:             client,
-		lastHeardFrom:     map[string]time.Time{},
+		deviceInfo:        map[string]deviceInfo{},
 	}, nil
 }
 
@@ -49,29 +57,48 @@ func (m *Monitor) ReceiveDeviceMessages() {
 			return
 		}
 
-		log.Printf("Received message %#v", msg)
+		var message pb.Message
+		if err := proto.Unmarshal(msg.Payload, &message); err != nil {
+			log.Println("Error:", err)
+			continue
+		}
 
-		m.mu.Lock()
-		m.lastHeardFrom[*msg.Device.DeviceID] = time.Now()
-		m.mu.Unlock()
+		if pm := message.GetPingMessage(); pm != nil {
+			m.handlePingMessage(*msg.Device.DeviceID, *pm)
+		}
 	}
+}
+
+func (m *Monitor) handlePingMessage(deviceID string, pm pb.PingMessage) {
+	log.Printf("Received ping message %#v", pm)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	info, ok := m.deviceInfo[deviceID]
+	info.lastHeardFrom = time.Now()
+	if ok && pm.Sequence != info.sequence+1 {
+		go m.alert(deviceID, fmt.Sprintf("expected sequence number %d but got %d", info.sequence+1, pm.Sequence))
+	}
+	info.sequence = pm.Sequence
+	m.deviceInfo[deviceID] = info
 }
 
 func (m *Monitor) MonitorDevices() {
 	for range time.NewTicker(5 * time.Second).C {
 		m.mu.Lock()
-		for id, t := range m.lastHeardFrom {
-			if time.Since(t) > m.inactivityTimeout {
-				delete(m.lastHeardFrom, id)
-				go m.alert(id)
+		for id, info := range m.deviceInfo {
+			if time.Since(info.lastHeardFrom) > m.inactivityTimeout {
+				delete(m.deviceInfo, id)
+				go m.alert(id, fmt.Sprintf("not heard from for %s", m.inactivityTimeout))
 			}
 		}
 		m.mu.Unlock()
 	}
 }
 
-func (m *Monitor) alert(deviceID string) {
-	log.Printf("Device %s not heard from for %v.", deviceID, m.inactivityTimeout)
+func (m *Monitor) alert(deviceID, subject string) {
+	log.Printf("Device %s: %s", deviceID, subject)
 
 	if m.mailer == nil {
 		return
@@ -100,7 +127,7 @@ func (m *Monitor) alert(deviceID string) {
 		if m.mailer != nil && member.Email != nil {
 			m.mailer.Send(Mail{
 				To:      *member.Email,
-				Subject: fmt.Sprintf("Device %s (%q) not heard from for %s.", deviceID, device.Tags["name"], m.inactivityTimeout),
+				Subject: fmt.Sprintf("Device %s (%q): %s", deviceID, device.Tags["name"], subject),
 				Body:    fmt.Sprintf(`<a href="https://nbiot.engineering/collections/%s/devices/%s">Click here</a> to administer this device.`, m.collectionID, deviceID),
 			})
 		}

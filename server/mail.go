@@ -81,7 +81,7 @@ func (m *Mailer) run() {
 }
 
 func (m *Mailer) send(sender mail.Sender, mm Mail) error {
-	const from = "no-reply@nbiot.engineering"
+	const from = "alerts@nbiot.engineering"
 
 	msg := mail.NewMessage()
 	msg.SetAddressHeader("From", from, "NB-IoT end to end")
@@ -90,8 +90,8 @@ func (m *Mailer) send(sender mail.Sender, mm Mail) error {
 	msg.SetBody("text/html", mm.Body)
 
 	options := &dkim.SignOptions{
-		Domain:   "aviary.services",
-		Selector: "main",
+		Domain:   "nbiot.engineering",
+		Selector: "1539687880.nbiot",
 		Signer:   m.dkimPrivateKey,
 	}
 

@@ -81,10 +81,10 @@ func (m *Mailer) run() {
 }
 
 func (m *Mailer) send(sender mail.Sender, mm Mail) error {
-	const from = "no-reply@aviary.services"
+	const from = "no-reply@nbiot.engineering"
 
 	msg := mail.NewMessage()
-	msg.SetAddressHeader("From", from, "Office Canary")
+	msg.SetAddressHeader("From", from, "NB-IoT end to end")
 	msg.SetHeader("To", mm.To)
 	msg.SetHeader("Subject", mm.Subject)
 	msg.SetBody("text/html", mm.Body)

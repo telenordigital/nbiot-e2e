@@ -14,7 +14,6 @@ then
   exit 1
 fi
 
-# TODO implement help text
 DIR=$1
 shift
 CMD=$@

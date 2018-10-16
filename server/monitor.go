@@ -128,7 +128,7 @@ func (m *Monitor) alert(deviceID, subject string) {
 			m.mailer.Send(Mail{
 				To:      *member.Email,
 				Subject: fmt.Sprintf("Device %s (%q): %s", deviceID, device.Tags["name"], subject),
-				Body:    fmt.Sprintf(`<a href="https://nbiot.engineering/collections/%s/devices/%s">Click here</a> to administer this device.`, m.collectionID, deviceID),
+				Body:    fmt.Sprintf(`<a href="https://nbiot.engineering/collection-overview/%s/devices/%s">Click here</a> to administer this device.`, m.collectionID, deviceID),
 			})
 		}
 	}

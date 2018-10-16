@@ -32,6 +32,6 @@ fi
 set -e
 
 echo "origin has changed - updating"
-echo git pull --rebase
+git pull --rebase
 
 $CMD

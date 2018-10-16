@@ -1,7 +1,7 @@
 #include "TelenorNBIoT.h"
 
 #include <pb_encode.h>
-#include "pb/message.pb.h"
+#include "message.pb.h"
 
 // Magic for selecting serial port
 #ifdef SERIAL_PORT_HARDWARE_OPEN

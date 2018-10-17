@@ -1,13 +1,13 @@
 #!/bin/bash
 
 usage() {
-  echo -n "usage: ${0} proj_dir command
+  echo -n "usage: ${0} proj_dir
 
 Check proj_dir for git origin remote changes. When directory is behind origin,
-pull and execute command."
+pull and exit 0. Otherwise exit 1."
 }
 
-if [[ "$#" -lt 2 ]]
+if [[ "$#" -lt 1 ]]
 then
   echo Too few arguments
   usage
@@ -15,22 +15,14 @@ then
 fi
 
 DIR=$1
-shift
-CMD=$@
 
 cd "$DIR"
 
 git remote update
-git status | grep behind
-
-if [ $? -gt 0 ]
-then
-  exit 0
-fi
+git status | grep behind || exit
 
 set -e
 
-echo "origin has changed - updating"
+echo "origin has changed"
 git pull --rebase
-
-$CMD
+exit $?

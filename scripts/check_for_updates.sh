@@ -24,5 +24,6 @@ git status | grep behind || exit
 set -e
 
 echo "origin has changed"
-git pull --rebase
+echo "git pull"
+git pull
 exit $?

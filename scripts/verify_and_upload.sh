@@ -17,6 +17,8 @@ fi
 DIR=$1
 shift
 
+echo Starting upload of new code
+
 # for each arduino board and port
 while [[ $# -gt 1 ]]; do
     ARDUINO_BOARD=$1
@@ -25,3 +27,5 @@ while [[ $# -gt 1 ]]; do
     arduino-cli compile --fqbn $ARDUINO_BOARD $DIR
     arduino-cli upload -p $ARDUINO_PORT --fqbn $ARDUINO_BOARD $DIR
 done
+
+echo Done uploading

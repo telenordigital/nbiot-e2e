@@ -24,8 +24,15 @@ while [[ $# -gt 1 ]]; do
     ARDUINO_BOARD=$1
     ARDUINO_PORT=$2
     shift 2
+
+    # kill process using the serial port
+    fuser -k $ARDUINO_PORT || true
+
     arduino-cli compile --fqbn $ARDUINO_BOARD $DIR
     arduino-cli upload -p $ARDUINO_PORT --fqbn $ARDUINO_BOARD $DIR
+
+    # log serial port output
+    cat $ARDUINO_PORT >> ~/log/`basename $ARDUINO_PORT`.log &
 done
 
 echo Done uploading

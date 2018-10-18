@@ -32,7 +32,7 @@ while [[ $# -gt 1 ]]; do
     arduino-cli upload -p $ARDUINO_PORT --fqbn $ARDUINO_BOARD $DIR
 
     # log serial port output
-    cat $ARDUINO_PORT >> ~/log/`basename $ARDUINO_PORT`.log &
+    socat $ARDUINO_PORT,b9600,raw - &>> ~/log/`basename $ARDUINO_PORT`.log &
 done
 
 echo Done uploading

@@ -37,13 +37,6 @@ void setup() {
 	ublox.begin(9600);
 	nbiot.begin(ublox);
 
-	Serial.print(F("going online..."));
-	while (!nbiot.online()) {
-		Serial.print(F("."));
-		delay(1000);
-	}
-	Serial.println(F("online"));
-
 	Serial.print(F("waiting for connection..."));
 	while (!nbiot.isConnected()) {
 		Serial.print(F("."));

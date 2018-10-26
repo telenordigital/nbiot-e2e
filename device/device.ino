@@ -37,8 +37,10 @@ void setup() {
 	ublox.begin(9600);
 	nbiot.begin(ublox);
 
+	Serial.println(F("starting nbiot e2e test"));
 	Serial.print(F("waiting for connection"));
 	while (!nbiot.isConnected()) {
+		printSignalStrength();
 		delay(1000);
 	}
 	Serial.println(F("connected"));
@@ -53,6 +55,8 @@ void setup() {
 uint32_t sequence = 1;
 
 void loop() {
+	printSignalStrength();
+
     nbiot_e2e_Message msg = {
         .which_message = nbiot_e2e_Message_ping_message_tag,
         .message = {
@@ -79,4 +83,10 @@ void loop() {
 
 end:
 	delay(15000);
+}
+
+void printSignalStrength() {
+	Serial.print(F("signal strength: "));
+	Serial.print(nbiot.rssi());
+	Serial.println(F(" dBm"));
 }

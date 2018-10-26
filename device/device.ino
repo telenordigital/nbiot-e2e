@@ -86,7 +86,12 @@ end:
 }
 
 void printSignalStrength() {
+	int rssi = nbiot.rssi();
 	Serial.print(F("signal strength: "));
-	Serial.print(nbiot.rssi());
-	Serial.println(F(" dBm"));
+	if (rssi == 99) {
+		Serial.println(F("unknown"));
+	} else {
+		Serial.print(rssi);
+		Serial.println(F(" dBm"));
+	}
 }

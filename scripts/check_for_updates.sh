@@ -15,8 +15,8 @@ then
 fi
 
 DIR=$1
-
 cd "$DIR"
+echo "checking $(git remote get-url origin) for changes"
 
 git remote update
 git status | grep behind || exit

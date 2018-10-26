@@ -3,3 +3,4 @@
 server/server
 *.elf
 *.hex
+arduino-service/arduino-service

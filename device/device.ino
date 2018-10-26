@@ -37,16 +37,14 @@ void setup() {
 	ublox.begin(9600);
 	nbiot.begin(ublox);
 
-	Serial.print(F("waiting for connection..."));
+	Serial.print(F("waiting for connection"));
 	while (!nbiot.isConnected()) {
-		Serial.print(F("."));
 		delay(1000);
 	}
 	Serial.println(F("connected"));
 
-	Serial.print(F("creating socket..."));
+	Serial.print(F("creating socket"));
 	while (!nbiot.createSocket()) {
-		Serial.print(F("."));
 		delay(1000);
 	}
 	Serial.println(F("created socket"));

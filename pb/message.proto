@@ -13,7 +13,9 @@ message Message {
 }
 
 message PingMessage {
+	reserved 2;
 	uint32 sequence = 1;
-	string commit_hash = 2 [(nanopb).max_size = 40];
 	float rssi = 3;
+	uint32 nbiot_lib_hash = 4;
+	uint32 e2e_hash = 5;
 }

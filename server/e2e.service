@@ -1,0 +1,15 @@
+[Unit]
+Description=NB-IoT end to end service
+After=network.target
+
+[Service]
+ExecStart=/home/ubuntu/server-linux-amd64 --collection-id 17dh0cf43jfhnf --inactivity-timeout 60s --dkim-private-key dkimprivatekey.txt
+WorkingDirectory=/home/ubuntu
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+RestartSec=5
+User=ubuntu
+
+[Install]
+WantedBy=multi-user.target

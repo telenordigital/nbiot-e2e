@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Environment="PATH=/usr/local/go/bin:/home/pi/go/bin"
-ExecStart=/home/pi/Arduino/nbiot-e2e/arduino-service/arduino-service --board-fqbn arduino:avr:uno --port /dev/ttyACM0 --sketch /home/pi/Arduino/nbiot-e2e/device --log-dir /home/pi/log
+ExecStart=/home/pi/Arduino/nbiot-e2e/arduino-service/arduino-service --board-fqbn arduino:avr:uno --port /dev/ttyACM0 --sketch /home/pi/Arduino/nbiot-e2e/device --log-dir /home/pi/log --git-dir /home/pi/Arduino/nbiot-e2e --git-dir /home/pi/Arduino/libraries/ArduinoNBIoT
 WorkingDirectory=/home/pi/Arduino/nbiot-e2e/arduino-service
 StandardOutput=inherit
 StandardError=inherit

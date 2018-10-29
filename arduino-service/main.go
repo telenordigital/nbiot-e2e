@@ -7,16 +7,23 @@ import (
 	"strings"
 
 	"github.com/jessevdk/go-flags"
+	"gopkg.in/src-d/go-git.v4"
 )
+
+type gitHash struct {
+	Name       string
+	LastCommit string
+}
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime)
 
 	var opts struct {
-		Boards []string `short:"b"    long:"board-fqbn"     required:"true"    description:"Arduino FQBN"`
-		Ports  []string `short:"p"    long:"port"           required:"true"    description:"USB Port"`
-		Sketch string   `short:"s"    long:"sketch"         required:"true"    description:"Sketch to upload when git-dir changes"`
-		LogDir string   `short:"l"    long:"log-dir"        required:"true"   description:"Directory to store log files"`
+		Boards  []string `short:"b"    long:"board-fqbn"     required:"true"    description:"Arduino FQBN"`
+		Ports   []string `short:"p"    long:"port"           required:"true"    description:"USB Port"`
+		Sketch  string   `short:"s"    long:"sketch"         required:"true"    description:"Sketch to upload when git-dir changes"`
+		LogDir  string   `short:"l"    long:"log-dir"        required:"true"    description:"Directory to store log files"`
+		GitDirs []string `short:"g"    long:"git-dir"        required:"true"    description:"Git repo folder for including latest commit hash in payload"`
 	}
 	_, err := flags.Parse(&opts)
 	if err != nil {
@@ -46,7 +53,7 @@ func main() {
 		logName := path.Join(opts.LogDir, strings.Replace(b, ":", "-", -1)+".log")
 		a := NewArduino(b, opts.Ports[i], logName)
 
-		if err := a.Verify(opts.Sketch); err != nil {
+		if err := a.Compile(opts.Sketch, gitHashes(opts.GitDirs)); err != nil {
 			log.Println("Error: ", err)
 		} else {
 			if err = a.Upload(opts.Sketch); err != nil {
@@ -59,4 +66,26 @@ func main() {
 	}
 
 	select {}
+}
+
+func gitHashes(gitDirs []string) []gitHash {
+	gitHashes := make([]gitHash, len(gitDirs))
+	for i, gitDir := range gitDirs {
+		repo, err := git.PlainOpen(gitDir)
+		if err != nil {
+			log.Fatal("Error: ", err)
+		}
+		head, err := repo.Head()
+		if err != nil {
+			log.Fatal("Error: ", err)
+		}
+		origin, err := repo.Remote("origin")
+		if err != nil {
+			log.Fatal("Error: ", err)
+		}
+		repoName := strings.Replace(path.Base(origin.Config().URLs[0]), ".git", "", 1)
+		gitHashes[i] = gitHash{repoName, head.Hash().String()[:7]}
+		log.Printf("Last commit %v", gitHashes[i])
+	}
+	return gitHashes
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"log"
 	"os"
 	"os/exec"
@@ -48,9 +49,31 @@ func (a *Arduino) MonitorSerial() {
 	}
 }
 
-func (a *Arduino) Verify(sketch string) error {
-	a.log.Println("Verifying " + a.board)
-	return arduino(a.log, "compile", "--fqbn", a.board, sketch)
+func (a *Arduino) Compile(sketch string, gitHashes []gitHash) error {
+	a.log.Println("Compiling " + a.board)
+
+	args := []string{"compile", "--fqbn", a.board}
+	for _, gitHash := range gitHashes {
+		defineName, err := repoToDefineName(gitHash.Name)
+		if err != nil {
+			log.Fatalln("Error:", err)
+		}
+		define := defineName + "=" + gitHash.LastCommit
+		args = append(args, "--build-properties", "build.extra_flags=-D"+define)
+	}
+	args = append(args, sketch)
+	return arduino(a.log, args...)
+}
+
+func repoToDefineName(repoName string) (string, error) {
+	switch repoName {
+	case "ArduinoNBIoT":
+		return "NBIOT_LIB_HASH", nil
+	case "nbiot-e2e":
+		return "E2E_HASH", nil
+	default:
+		return "", errors.New("Unknown repo name")
+	}
 }
 
 func (a *Arduino) Upload(sketch string) error {

@@ -62,6 +62,7 @@ func (a *Arduino) Compile(sketch string, gitHashes []gitHash) error {
 		args = append(args, "--build-properties", "build.extra_flags=-D"+define)
 	}
 	args = append(args, sketch)
+	a.log.Printf("Compile args: %v\n", args)
 	return arduino(a.log, args...)
 }
 

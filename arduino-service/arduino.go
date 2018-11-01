@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/tarm/serial"
@@ -53,14 +54,18 @@ func (a *Arduino) Compile(sketch string, gitHashes []gitHash) error {
 	a.log.Println("Compiling " + a.board)
 
 	args := []string{"compile", "--fqbn", a.board}
+	var defines []string
 	for _, gitHash := range gitHashes {
 		defineName, err := repoToDefineName(gitHash.Name)
 		if err != nil {
 			log.Fatalln("Error:", err)
 		}
-		define := defineName + "=" + gitHash.LastCommit
-		args = append(args, "--build-properties", "build.extra_flags=-D"+define)
+		defines = append(defines, defineName+"="+gitHash.LastCommit)
 	}
+	if len(defines) > 0 {
+		args = append(args, "--build-properties", "\"build.extra_flags=-D"+strings.Join(defines, " -D")+"\"")
+	}
+
 	args = append(args, sketch)
 	a.log.Printf("Compile args: %v\n", args)
 	return arduino(a.log, args...)

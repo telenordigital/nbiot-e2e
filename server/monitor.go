@@ -105,7 +105,7 @@ func (m *Monitor) MonitorDevices() {
 		for id, info := range m.deviceInfo {
 			if time.Since(info.lastHeardFrom) > m.inactivityTimeout {
 				d := m.deviceInfo[id]
-				delete(m.deviceInfo, id)
+				// delete(m.deviceInfo, id)
 				body := fmt.Sprintf(
 					`Device info for last message from device:
 RSSI: %v dBm

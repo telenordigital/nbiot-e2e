@@ -18,12 +18,23 @@ DIR=$1
 cd "$DIR"
 echo "checking $(git remote get-url origin) for changes"
 
-git remote update
-git status | grep behind || exit
-
 set -e
 
-echo "origin has changed"
-echo "git pull"
-git pull
+git remote update
+#git status | grep behind || exit
+status=$(git status)
+if [[ "$status" =~ "have diverged" ]]; then
+  echo "origin has diverged"
+  echo "git fetch"
+  git fetch
+  # get remote branch ref
+  ref=$(git rev-parse --abbrev-ref --symbolic-full-name @{u})
+  echo "git reset --hard $ref"
+  git reset --hard $ref
+elif [[ "$status" =~ "behind" ]]; then
+  echo "origin has changed"
+  echo "git pull"
+  git pull
+fi
+
 exit $?

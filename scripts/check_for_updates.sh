@@ -35,6 +35,8 @@ elif [[ "$status" =~ "behind" ]]; then
   echo "origin has changed"
   echo "git pull"
   git pull
+else
+  exit 1
 fi
 
 exit $?

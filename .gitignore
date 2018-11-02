@@ -4,3 +4,4 @@ server/server
 *.elf
 *.hex
 arduino-service/arduino-service
+server/server-linux-amd64

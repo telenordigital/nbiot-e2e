@@ -94,7 +94,6 @@ func (m *Monitor) handlePingMessage(deviceID string, pm pb.PingMessage) {
 		log.Printf("New version of ArduinoNBIoT library detected\nhttps://github.com/ExploratoryEngineering/ArduinoNBIoT/commit/%s\n", nbiotLibHash)
 		info.nbiotLibHash = nbiotLibHash
 	}
-	info.rssi = pm.Rssi
 
 	m.deviceInfo[deviceID] = info
 }

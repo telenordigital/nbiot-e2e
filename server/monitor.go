@@ -22,10 +22,11 @@ type Monitor struct {
 }
 
 type deviceInfo struct {
+	inAlertState  bool
 	lastHeardFrom time.Time
 	sequence      uint32
-	nbiotLibHash  string
-	e2eHash       string
+	nbiotLibHash  uint32
+	e2eHash       uint32
 	rssi          float32
 }
 
@@ -77,23 +78,30 @@ func (m *Monitor) handlePingMessage(deviceID string, pm pb.PingMessage) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	info, ok := m.deviceInfo[deviceID]
+	info, deviceExists := m.deviceInfo[deviceID]
+	info.inAlertState = false
 	info.lastHeardFrom = time.Now()
-	if ok && pm.Sequence != info.sequence+1 {
-		go m.alert(deviceID, fmt.Sprintf("Expected sequence number %d but got %d", info.sequence+1, pm.Sequence), "")
+
+	if deviceExists {
+		if pm.Sequence < info.sequence {
+			log.Printf("Got a sequence number %d that is smaller than the previous %d. Device restarted?\n", pm.Sequence, info.sequence)
+		} else if pm.Sequence != info.sequence+1 {
+			go m.alert(deviceID, fmt.Sprintf("Expected sequence number %d but got %d", info.sequence+1, pm.Sequence), "")
+		}
+
+		if pm.E2EHash != info.e2eHash {
+			log.Printf("New version of nbiot-e2e detected\nhttps://github.com/telenordigital/nbiot-e2e/commit/%x\n", pm.E2EHash)
+		}
+
+		if pm.NbiotLibHash != info.nbiotLibHash {
+			log.Printf("New version of ArduinoNBIoT library detected\nhttps://github.com/ExploratoryEngineering/ArduinoNBIoT/commit/%x\n", pm.NbiotLibHash)
+		}
 	}
+
 	info.sequence = pm.Sequence
 	info.rssi = pm.Rssi
-	e2eHash := fmt.Sprintf("%x", pm.E2EHash)
-	if e2eHash != info.e2eHash {
-		log.Printf("New version of nbiot-e2e detected\nhttps://github.com/telenordigital/nbiot-e2e/commit/%s\n", e2eHash)
-		info.e2eHash = e2eHash
-	}
-	nbiotLibHash := fmt.Sprintf("%x", pm.NbiotLibHash)
-	if nbiotLibHash != info.nbiotLibHash {
-		log.Printf("New version of ArduinoNBIoT library detected\nhttps://github.com/ExploratoryEngineering/ArduinoNBIoT/commit/%s\n", nbiotLibHash)
-		info.nbiotLibHash = nbiotLibHash
-	}
+	info.e2eHash = pm.E2EHash
+	info.nbiotLibHash = pm.NbiotLibHash
 
 	m.deviceInfo[deviceID] = info
 }
@@ -102,9 +110,12 @@ func (m *Monitor) MonitorDevices() {
 	for range time.NewTicker(5 * time.Second).C {
 		m.mu.Lock()
 		for id, info := range m.deviceInfo {
+			if info.inAlertState {
+				continue
+			}
 			if time.Since(info.lastHeardFrom) > m.inactivityTimeout {
 				d := m.deviceInfo[id]
-				// delete(m.deviceInfo, id)
+				info.inAlertState = true
 				body := fmt.Sprintf(
 					`Device info for last message from device:
 RSSI: %v dBm

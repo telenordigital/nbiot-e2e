@@ -4,5 +4,9 @@ all:
 
 .PHONY: cross-compile
 cross-compile:
-	go get -u github.com/karalabe/xgo
-	xgo -go 1.11 --targets=linux/amd64 github.com/telenordigital/nbiot-e2e/server
+	GOOS=linux GOARCH=amd64 go build -o server-linux-amd64
+
+.PHONY: deploy
+deploy: cross-compile
+	scp server-linux-amd64 ubuntu@e2e.nbiot.engineering:server-linux-amd64-new
+	ssh ubuntu@e2e.nbiot.engineering "sudo systemctl stop e2e && mv server-linux-amd64-new server-linux-amd64 && sudo systemctl start e2e && journalctl -f -u e2e"

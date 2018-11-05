@@ -10,12 +10,8 @@ To configure the service the first time, run this on the server:
 
 # Deploy a new version
 
-    make cross-compile
-    scp server-linux-amd64 ubuntu@e2e.nbiot.engineering:
-    ssh ubuntu@e2e.nbiot.engineering
+    make deploy
 
-    # on e2e.nbiot.engineering
-    sudo systemctl restart e2e
+# Watch log (remotely)
 
-    # to view log output
-    sudo journalctl -f -u e2e
+    ssh ubuntu@e2e.nbiot.engineering journalctl -f -u e2e

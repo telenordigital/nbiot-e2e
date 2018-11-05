@@ -7,6 +7,7 @@ Set the `TELENOR_NBIOT_TOKEN` environment variable to your API token before runn
 To configure the service the first time, run this on the server:
 
     sudo cp e2e.service /etc/systemd/system/
+    sudo systemctl enable e2e # start service after boot
 
 # Deploy a new version
 

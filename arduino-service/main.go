@@ -42,9 +42,10 @@ func main() {
 		log.Fatalln("Error: more ports than boards")
 	}
 
-	for i, b := range opts.Boards {
-		logName := path.Join(opts.LogDir, strings.Replace(b, ":", "-", -1)+".log")
-		a := NewArduino(b, opts.Ports[i], logName)
+	for i, board := range opts.Boards {
+		logName := path.Join(opts.LogDir, strings.Replace(board, ":", "-", -1)+".log")
+		port := opts.Ports[i]
+		a := NewArduino(board, port, logName)
 
 		if err := a.Verify(opts.Sketch); err != nil {
 			log.Println("Error: ", err)
@@ -54,7 +55,7 @@ func main() {
 			}
 		}
 
-		log.Printf("Starting serial monitor for %s %s\n", opts.Boards[0], opts.Ports[0])
+		log.Printf("Starting serial monitor for %s %s\n", board, port)
 		go a.MonitorSerial()
 	}
 

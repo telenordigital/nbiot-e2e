@@ -19,7 +19,7 @@ type Arduino struct {
 func NewArduino(board, port string, logName string) *Arduino {
 	logFile, err := os.OpenFile(logName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Println("Error: ", err)
+		log.Fatalln("Error: ", err)
 	}
 	return &Arduino{
 		board: board,
@@ -32,9 +32,12 @@ func (a *Arduino) MonitorSerial() {
 	a.log.Printf("Starting serial connection to %s (%s)\n", a.port, a.board)
 	serialConfig := &serial.Config{Name: a.port, Baud: 9600, ReadTimeout: time.Second * 1}
 
+openSerialPort:
 	serial, err := serial.OpenPort(serialConfig)
 	if err != nil {
 		a.log.Println("Error: ", err)
+		time.Sleep(5 * time.Second)
+		goto openSerialPort
 	}
 
 	for {
@@ -59,10 +62,7 @@ func (a *Arduino) Upload(sketch string) error {
 }
 
 func dropCR(data []byte) []byte {
-	if len(data) > 0 && data[len(data)-1] == '\r' {
-		return data[0 : len(data)-1]
-	}
-	return data
+	return bytes.TrimRight(data, "\r")
 }
 
 func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {

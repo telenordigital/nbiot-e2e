@@ -61,14 +61,14 @@ void setup() {
 	nbiot.begin(ublox);
 
 	Serial.println(F("starting nbiot e2e test"));
-	Serial.print(F("waiting for connection"));
+	Serial.println(F("waiting for connection"));
 	while (!nbiot.isConnected()) {
 		printSignalStrength(nbiot.rssi());
 		delay(1000);
 	}
 	Serial.println(F("connected"));
 
-	Serial.print(F("creating socket"));
+	Serial.println(F("creating socket"));
 	while (!nbiot.createSocket()) {
 		delay(1000);
 	}
@@ -96,7 +96,8 @@ void loop() {
 	uint8_t msg_buffer[nbiot_e2e_Message_size] = { 0 };
 	pb_ostream_t stream = pb_ostream_from_buffer(msg_buffer, sizeof(msg_buffer));
 	if (!pb_encode(&stream, nbiot_e2e_Message_fields, &msg)) {
-		Serial.println(sprintf("pb_encode error: %s\n", stream.errmsg));
+		Serial.print("pb_encode error: "));
+		Serail.println(stream.errmsg);
 		goto end;
 	}
 

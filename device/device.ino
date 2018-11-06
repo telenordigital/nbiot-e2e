@@ -96,8 +96,8 @@ void loop() {
 	uint8_t msg_buffer[nbiot_e2e_Message_size] = { 0 };
 	pb_ostream_t stream = pb_ostream_from_buffer(msg_buffer, sizeof(msg_buffer));
 	if (!pb_encode(&stream, nbiot_e2e_Message_fields, &msg)) {
-		Serial.print("pb_encode error: "));
-		Serail.println(stream.errmsg);
+		Serial.print("pb_encode error: ");
+		Serial.println(stream.errmsg);
 		goto end;
 	}
 

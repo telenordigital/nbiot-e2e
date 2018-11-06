@@ -3,6 +3,20 @@
 #include <pb_encode.h>
 #include "message.pb.h"
 
+// https://stackoverflow.com/a/5256500/44643
+#define CAT_NX(A, B) A ## B
+#define CAT(A, B) CAT_NX(A, B)
+
+#ifndef NBIOT_LIB_HASH
+#define NBIOT_LIB_HASH
+#warning Missing nbiot library commit hash
+#endif
+
+#ifndef E2E_HASH
+#define E2E_HASH
+#warning Missing e2e commit hash
+#endif
+
 // Magic for selecting serial port
 #ifdef SERIAL_PORT_HARDWARE_OPEN
 /*
@@ -30,9 +44,18 @@ TelenorNBIoT nbiot("mda.ee", 242, 01);
 IPAddress remoteIP(172, 16, 15, 14);
 int REMOTE_PORT = 1234;
 
+uint32_t nbiot_lib_hash = CAT(0x0, NBIOT_LIB_HASH);
+uint32_t e2e_hash = CAT(0x0, E2E_HASH);
+
+
 void setup() {
 	Serial.begin(9600);
 	while (!Serial) {}
+
+	Serial.print("ArduinoNBIoT git commit: ");
+	Serial.println(nbiot_lib_hash, HEX);
+	Serial.print("nbiot-e2e git commit: ");
+	Serial.println(e2e_hash, HEX);
 
 	ublox.begin(9600);
 	nbiot.begin(ublox);
@@ -58,10 +81,13 @@ void loop() {
 	printSignalStrength();
 
     nbiot_e2e_Message msg = {
-        .which_message = nbiot_e2e_Message_ping_message_tag,
-        .message = {
-            .ping_message = {
-            	.sequence = sequence,
+        which_message: nbiot_e2e_Message_ping_message_tag,
+        message: {
+            ping_message: {
+            	sequence:       sequence,
+				rssi:           99.0,
+				nbiot_lib_hash: nbiot_lib_hash,
+				e2e_hash:       e2e_hash,
             },
         },
     };

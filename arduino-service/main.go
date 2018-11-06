@@ -6,58 +6,69 @@ import (
 	"path"
 	"strings"
 
-	"github.com/jessevdk/go-flags"
+	"gopkg.in/src-d/go-git.v4"
 )
+
+type gitHash struct {
+	Name       string
+	LastCommit string
+}
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime)
 
-	var opts struct {
-		Boards []string `short:"b"    long:"board-fqbn"     required:"true"    description:"Arduino FQBN"`
-		Ports  []string `short:"p"    long:"port"           required:"true"    description:"USB Port"`
-		Sketch string   `short:"s"    long:"sketch"         required:"true"    description:"Sketch to upload when git-dir changes"`
-		LogDir string   `short:"l"    long:"log-dir"        required:"true"   description:"Directory to store log files"`
-	}
-	_, err := flags.Parse(&opts)
+	config, err := readConfig()
 	if err != nil {
-		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
-			os.Exit(0)
-		}
-		os.Exit(1)
-	}
-
-	if _, err := os.Stat(opts.Sketch); os.IsNotExist(err) {
 		log.Fatalln(err)
 	}
 
-	if stat, err := os.Stat(opts.LogDir); os.IsNotExist(err) {
+	if _, err := os.Stat(config.Sketch); os.IsNotExist(err) {
+		log.Fatalln(err)
+	}
+
+	if stat, err := os.Stat(config.LogDir); os.IsNotExist(err) {
 		log.Fatalln(err)
 	} else if !stat.IsDir() {
-		log.Fatalf("%s is not a directory", opts.LogDir)
+		log.Fatalf("%s is not a directory", config.LogDir)
 	}
 
-	if len(opts.Boards) > len(opts.Ports) {
-		log.Fatalln("Error: more boards than ports")
-	} else if len(opts.Ports) > len(opts.Boards) {
-		log.Fatalln("Error: more ports than boards")
-	}
+	for _, board := range config.Boards {
+		logName := path.Join(config.LogDir, strings.Replace(board.ArduinoFQBN, ":", "-", -1)+".log")
+		a := NewArduino(board.ArduinoFQBN, board.Port, logName)
 
-	for i, board := range opts.Boards {
-		logName := path.Join(opts.LogDir, strings.Replace(board, ":", "-", -1)+".log")
-		port := opts.Ports[i]
-		a := NewArduino(board, port, logName)
-
-		if err := a.Verify(opts.Sketch); err != nil {
+		if err := a.Compile(config.Sketch, gitHashes(config.GitDirs)); err != nil {
 			log.Println("Error: ", err)
 		} else {
-			if err = a.Upload(opts.Sketch); err != nil {
+			if err = a.Upload(config.Sketch); err != nil {
 				log.Println("Error: ", err)
 			}
 		}
 
-		log.Printf("Starting serial monitor for %s %s\n", board, port)
+		log.Printf("Starting serial monitor for %s %s\n", board.ArduinoFQBN, board.Port)
 		go a.MonitorSerial()
 	}
 
 	select {}
+}
+
+func gitHashes(gitDirs []string) []gitHash {
+	gitHashes := make([]gitHash, len(gitDirs))
+	for i, gitDir := range gitDirs {
+		repo, err := git.PlainOpen(gitDir)
+		if err != nil {
+			log.Fatal("Error: ", err)
+		}
+		head, err := repo.Head()
+		if err != nil {
+			log.Fatal("Error: ", err)
+		}
+		origin, err := repo.Remote("origin")
+		if err != nil {
+			log.Fatal("Error: ", err)
+		}
+		repoName := strings.Replace(path.Base(origin.Config().URLs[0]), ".git", "", 1)
+		gitHashes[i] = gitHash{repoName, head.Hash().String()[:7]}
+		log.Printf("Last commit %v", gitHashes[i])
+	}
+	return gitHashes
 }

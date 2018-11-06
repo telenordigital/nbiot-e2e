@@ -3,9 +3,11 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/tarm/serial"
@@ -51,9 +53,36 @@ openSerialPort:
 	}
 }
 
-func (a *Arduino) Verify(sketch string) error {
-	a.log.Println("Verifying " + a.board)
-	return arduino(a.log, "compile", "--fqbn", a.board, sketch)
+func (a *Arduino) Compile(sketch string, gitHashes []gitHash) error {
+	a.log.Println("Compiling " + a.board)
+
+	args := []string{"compile", "--fqbn", a.board}
+	var defines []string
+	for _, gitHash := range gitHashes {
+		defineName, err := repoToDefineName(gitHash.Name)
+		if err != nil {
+			log.Fatalln("Error:", err)
+		}
+		defines = append(defines, defineName+"="+gitHash.LastCommit)
+	}
+	if len(defines) > 0 {
+		args = append(args, "--build-properties", `"build.extra_flags=-D`+strings.Join(defines, " -D")+`"`)
+	}
+
+	args = append(args, sketch)
+	a.log.Printf("Compile args: %v\n", args)
+	return arduino(a.log, args...)
+}
+
+func repoToDefineName(repoName string) (string, error) {
+	switch repoName {
+	case "ArduinoNBIoT":
+		return "NBIOT_LIB_HASH", nil
+	case "nbiot-e2e":
+		return "E2E_HASH", nil
+	default:
+		return "", errors.New("Unknown repo name")
+	}
 }
 
 func (a *Arduino) Upload(sketch string) error {

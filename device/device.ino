@@ -58,21 +58,31 @@ void setup() {
 	Serial.println(e2e_hash, HEX);
 
 	ublox.begin(9600);
-	nbiot.begin(ublox);
+	int attempts;
+	// Sometimes we're never able to connect to the network
+	// Restart the u-blox module and retry until successful
+	while (true) {
+		nbiot.begin(ublox);
 
-	Serial.println(F("starting nbiot e2e test"));
-	Serial.println(F("waiting for connection"));
-	while (!nbiot.isConnected()) {
-		printSignalStrength(nbiot.rssi());
-		delay(1000);
-	}
-	Serial.println(F("connected"));
+		Serial.println(F("starting nbiot e2e test"));
+		Serial.println(F("waiting for connection"));
+		attempts = 0;
+		while (!nbiot.isConnected()) {
+			if (++attempts > 180) { continue; }
+			printSignalStrength(nbiot.rssi());
+			delay(1000);
+		}
+		Serial.println(F("connected"));
 
-	Serial.println(F("creating socket"));
-	while (!nbiot.createSocket()) {
-		delay(1000);
+		attempts = 0;
+		Serial.println(F("creating socket"));
+		while (!nbiot.createSocket()) {
+			if (++attempts > 10) { continue; }
+			delay(1000);
+		}
+		Serial.println(F("created socket"));
+		break; // successful - exit retry loop
 	}
-	Serial.println(F("created socket"));
 }
 
 uint32_t sequence = 1;

@@ -63,7 +63,7 @@ void setup() {
 	Serial.println(F("starting nbiot e2e test"));
 	Serial.print(F("waiting for connection"));
 	while (!nbiot.isConnected()) {
-		printSignalStrength();
+		printSignalStrength(nbiot.rssi());
 		delay(1000);
 	}
 	Serial.println(F("connected"));
@@ -78,14 +78,15 @@ void setup() {
 uint32_t sequence = 1;
 
 void loop() {
-	printSignalStrength();
+	int rssi = nbiot.rssi();
+	printSignalStrength(rssi);
 
     nbiot_e2e_Message msg = {
         which_message: nbiot_e2e_Message_ping_message_tag,
         message: {
             ping_message: {
             	sequence:       sequence,
-				rssi:           99.0,
+				rssi:           (float) rssi,
 				nbiot_lib_hash: nbiot_lib_hash,
 				e2e_hash:       e2e_hash,
             },
@@ -111,8 +112,7 @@ end:
 	delay(15000);
 }
 
-void printSignalStrength() {
-	int rssi = nbiot.rssi();
+void printSignalStrength(int rssi) {
 	Serial.print(F("signal strength: "));
 	if (rssi == 99) {
 		Serial.println(F("unknown"));

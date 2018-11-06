@@ -1,0 +1,14 @@
+{
+    "sketch": "/home/pi/Arduino/nbiot-e2e/device",
+    "logDir": "/home/pi/log",
+    "gitDirs": [
+        "/home/pi/Arduino/nbiot-e2e",
+        "/home/pi/Arduino/libraries/ArduinoNBIoT"
+    ],
+    "boards": [
+        {
+            "fqbn": "arduino:avr:uno",
+            "port": "/dev/ttyACM0"
+        }
+    ]
+}

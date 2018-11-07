@@ -15,7 +15,7 @@ message Message {
 message PingMessage {
 	reserved 2;
 	uint32 sequence = 1;
-	float rssi = 3;
+	float prev_rssi = 3;
 	uint32 nbiot_lib_hash = 4;
 	uint32 e2e_hash = 5;
 }

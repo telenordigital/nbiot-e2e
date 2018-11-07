@@ -99,7 +99,7 @@ func (m *Monitor) handlePingMessage(deviceID string, pm pb.PingMessage) {
 	}
 
 	info.sequence = pm.Sequence
-	info.rssi = pm.Rssi
+	info.rssi = pm.PrevRssi
 	info.e2eHash = pm.E2EHash
 	info.nbiotLibHash = pm.NbiotLibHash
 

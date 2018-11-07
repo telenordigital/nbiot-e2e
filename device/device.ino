@@ -86,17 +86,15 @@ void setup() {
 }
 
 uint32_t sequence = 1;
+int rssi = 99;
 
 void loop() {
-	int rssi = nbiot.rssi();
-	printSignalStrength(rssi);
-
-    nbiot_e2e_Message msg = {
+	nbiot_e2e_Message msg = {
         which_message: nbiot_e2e_Message_ping_message_tag,
         message: {
             ping_message: {
             	sequence:       sequence,
-				rssi:           (float) rssi,
+				prev_rssi:      (float) rssi,
 				nbiot_lib_hash: nbiot_lib_hash,
 				e2e_hash:       e2e_hash,
             },
@@ -118,9 +116,10 @@ void loop() {
 		Serial.println(F("failed to send"));
 		goto end;
 	}
-	printSignalStrength(nbiot.rssi());
 
 end:
+	rssi = nbiot.rssi();
+	printSignalStrength(rssi);
 	delay(15000);
 }
 

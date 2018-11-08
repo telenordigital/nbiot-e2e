@@ -86,42 +86,45 @@ void setup() {
 }
 
 uint32_t sequence = 1;
+int rssi = 99;
 
 void loop() {
-	int rssi = nbiot.rssi();
-	printSignalStrength(rssi);
-
-    nbiot_e2e_Message msg = {
+	nbiot_e2e_Message msg = {
         which_message: nbiot_e2e_Message_ping_message_tag,
         message: {
             ping_message: {
             	sequence:       sequence,
-				rssi:           (float) rssi,
+				prev_rssi:      (float) rssi,
 				nbiot_lib_hash: nbiot_lib_hash,
 				e2e_hash:       e2e_hash,
             },
         },
     };
 
-	uint8_t msg_buffer[nbiot_e2e_Message_size] = { 0 };
-	pb_ostream_t stream = pb_ostream_from_buffer(msg_buffer, sizeof(msg_buffer));
-	if (!pb_encode(&stream, nbiot_e2e_Message_fields, &msg)) {
-		Serial.print("pb_encode error: ");
-		Serial.println(stream.errmsg);
-		goto end;
-	}
-
-	if (nbiot.sendBytes(remoteIP, REMOTE_PORT, (const char*)msg_buffer, stream.bytes_written)) {
+	if (send(&msg)) {
 		Serial.println(F("sent message"));
 		++sequence;
 	} else {
 		Serial.println(F("failed to send"));
-		goto end;
 	}
-	printSignalStrength(nbiot.rssi());
-
+	
 end:
+	rssi = nbiot.rssi();
+	printSignalStrength(rssi);
 	delay(15000);
+}
+
+bool send(nbiot_e2e_Message* msg) {
+	uint8_t msg_buffer[nbiot_e2e_Message_size] = { 0 };
+	pb_ostream_t stream = pb_ostream_from_buffer(msg_buffer, sizeof(msg_buffer));
+
+	if (!pb_encode(&stream, nbiot_e2e_Message_fields, &msg)) {
+		Serial.print("pb_encode error: ");
+		Serial.println(stream.errmsg);
+		return false;
+	}
+
+	return nbiot.sendBytes(remoteIP, REMOTE_PORT, (const char*)msg_buffer, stream.bytes_written);
 }
 
 void printSignalStrength(int rssi) {

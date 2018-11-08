@@ -18,7 +18,7 @@ type Monitor struct {
 	nbiot             *nbiot.Client
 
 	mu         sync.Mutex
-	deviceInfo map[string]deviceInfo
+	deviceInfo map[string]*deviceInfo
 }
 
 type deviceInfo struct {
@@ -36,12 +36,35 @@ func NewMonitor(collectionID string, inactivityTimeout time.Duration, mailer *Ma
 		return nil, err
 	}
 
+	collection, err := client.Collection(collectionID)
+	if err != nil {
+		log.Fatalln("Error reading collection:", err)
+	}
+
+	team, err := client.Team(*collection.TeamID)
+	if err != nil {
+		log.Fatalln("Error reading team:", err)
+	}
+
+	log.Printf(`Starting monitor for collection "%s" and team "%s"`, collection.Tags["name"], team.Tags["name"])
+	emailCount := 0
+	for _, member := range team.Members {
+		if member.Email != nil {
+			emailCount++
+		}
+	}
+	if emailCount == 0 {
+		log.Fatalln("No team members with an e-mail address")
+	} else {
+		log.Println("Number of e-mails found in the team:", emailCount)
+	}
+
 	return &Monitor{
 		collectionID:      collectionID,
 		inactivityTimeout: inactivityTimeout,
 		mailer:            mailer,
 		nbiot:             client,
-		deviceInfo:        map[string]deviceInfo{},
+		deviceInfo:        map[string]*deviceInfo{},
 	}, nil
 }
 
@@ -79,6 +102,11 @@ func (m *Monitor) handlePingMessage(deviceID string, pm pb.PingMessage) {
 	defer m.mu.Unlock()
 
 	info, deviceExists := m.deviceInfo[deviceID]
+	if !deviceExists {
+		info = &deviceInfo{}
+		m.deviceInfo[deviceID] = info
+	}
+
 	info.inAlertState = false
 	info.lastHeardFrom = time.Now()
 
@@ -102,8 +130,6 @@ func (m *Monitor) handlePingMessage(deviceID string, pm pb.PingMessage) {
 	info.rssi = pm.Rssi
 	info.e2eHash = pm.E2EHash
 	info.nbiotLibHash = pm.NbiotLibHash
-
-	m.deviceInfo[deviceID] = info
 }
 
 func (m *Monitor) MonitorDevices() {
@@ -114,14 +140,13 @@ func (m *Monitor) MonitorDevices() {
 				continue
 			}
 			if time.Since(info.lastHeardFrom) > m.inactivityTimeout {
-				d := m.deviceInfo[id]
 				info.inAlertState = true
 				body := fmt.Sprintf(
 					`Device info for last message from device:
 RSSI: %v dBm
 ArduinoNBIoT commit: <a href="https://github.com/ExploratoryEngineering/ArduinoNBIoT/commit/%s">%s</a>
 nbiot-e2e commit: <a href="https://github.com/telenordigital/nbiot-e2e/commit/%s">%s</a>
-`, d.rssi, d.nbiotLibHash, d.nbiotLibHash, d.e2eHash, d.e2eHash)
+`, info.rssi, info.nbiotLibHash, info.nbiotLibHash, info.e2eHash, info.e2eHash)
 				go m.alert(id, fmt.Sprintf("not heard from for %s", m.inactivityTimeout), body)
 			}
 		}

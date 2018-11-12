@@ -66,7 +66,7 @@ func (a *Arduino) Compile(sketch string, gitHashes []gitHash) error {
 		defines = append(defines, defineName+"="+gitHash.LastCommit)
 	}
 	if len(defines) > 0 {
-		args = append(args, "--build-properties", `"build.extra_flags=-D`+strings.Join(defines, " -D")+`"`)
+		args = append(args, "--build-properties", `"compiler.cpp.extra_flags=-D`+strings.Join(defines, " -D")+`"`)
 	}
 
 	args = append(args, sketch)

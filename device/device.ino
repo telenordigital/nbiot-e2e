@@ -118,11 +118,14 @@ bool send(nbiot_e2e_Message* msg) {
 	uint8_t msg_buffer[nbiot_e2e_Message_size] = { 0 };
 	pb_ostream_t stream = pb_ostream_from_buffer(msg_buffer, sizeof(msg_buffer));
 
-	if (!pb_encode(&stream, nbiot_e2e_Message_fields, &msg)) {
+	if (!pb_encode(&stream, nbiot_e2e_Message_fields, msg)) {
 		Serial.print("pb_encode error: ");
 		Serial.println(stream.errmsg);
 		return false;
 	}
+
+	Serial.print("payload bytes: ");
+	Serial.println(stream.bytes_written);
 
 	return nbiot.sendBytes(remoteIP, REMOTE_PORT, (const char*)msg_buffer, stream.bytes_written);
 }

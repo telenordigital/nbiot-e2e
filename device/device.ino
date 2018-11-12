@@ -108,7 +108,6 @@ void loop() {
 		Serial.println(F("failed to send"));
 	}
 	
-end:
 	rssi = nbiot.rssi();
 	printSignalStrength(rssi);
 	delay(15000);

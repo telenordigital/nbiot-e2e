@@ -96,7 +96,7 @@ func (m *Monitor) ReceiveDeviceMessages() {
 }
 
 func (m *Monitor) handlePingMessage(deviceID string, pm pb.PingMessage) {
-	log.Printf("Received ping message %#v", pm)
+	log.Printf("Received ping message from device %s %#v", deviceID, pm)
 
 	m.mu.Lock()
 	defer m.mu.Unlock()

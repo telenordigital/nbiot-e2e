@@ -5,7 +5,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/jessevdk/go-flags"
+)
+
+const (
+	// SlackWebhookEnvName is the name of the environment variable that can be
+	// used to specify the Slack webhook URL for posting alerts
+	SlackWebhookEnvName = "SLACK_WEBHOOK_URL"
 )
 
 func main() {
@@ -24,12 +32,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	slackWebhookURL := os.Getenv(SlackWebhookEnvName)
+	if slackWebhookURL == "" {
+		log.Println("No ENV variable for slack webhook URL, trying to fetch secret from AWS")
+		log.Println("AWS_REGION: ", os.Getenv("AWS_REGION"))
+		slackWebhookURL, err = getParameter("nbiot-e2e-slack-webhook-url")
+		if err != nil {
+			log.Println("Error: ", err)
+		}
+		log.Println("Slack webhook: ", slackWebhookURL)
+	}
+
 	var mailer *Mailer
 	if opts.DKIMPrivateKey != "" {
 		mailer = NewMailer(opts.DKIMPrivateKey)
 	}
 
-	m, err := NewMonitor(opts.CollectionID, opts.InactivityTimeout, mailer)
+	m, err := NewMonitor(opts.CollectionID, opts.InactivityTimeout, mailer, slackWebhookURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,4 +59,13 @@ func main() {
 		m.ReceiveDeviceMessages()
 		time.Sleep(5 * time.Second)
 	}
+}
+
+func getParameter(name string) (string, error) {
+	svc := ssm.New(session.New())
+	result, err := svc.GetParameter(&ssm.GetParameterInput{Name: &name})
+	if err != nil {
+		return "", err
+	}
+	return *result.Parameter.Value, nil
 }

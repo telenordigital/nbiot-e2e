@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ashwanthkumar/slack-go-webhook"
 	"github.com/golang/protobuf/proto"
 	"github.com/telenordigital/nbiot-e2e/server/pb"
 	"github.com/telenordigital/nbiot-go"
@@ -16,6 +17,7 @@ type Monitor struct {
 	inactivityTimeout time.Duration
 	mailer            *Mailer
 	nbiot             *nbiot.Client
+	slackURL          string
 
 	mu         sync.Mutex
 	deviceInfo map[string]*deviceInfo
@@ -30,7 +32,7 @@ type deviceInfo struct {
 	rssi          float32
 }
 
-func NewMonitor(collectionID string, inactivityTimeout time.Duration, mailer *Mailer) (*Monitor, error) {
+func NewMonitor(collectionID string, inactivityTimeout time.Duration, mailer *Mailer, slackURL string) (*Monitor, error) {
 	client, err := nbiot.New()
 	if err != nil {
 		return nil, err
@@ -59,10 +61,15 @@ func NewMonitor(collectionID string, inactivityTimeout time.Duration, mailer *Ma
 		log.Println("Number of e-mails found in the team:", emailCount)
 	}
 
+	if slackURL == "" {
+		log.Println("WARNING: no Slack webhook URL specified. Slack alerts disabled.")
+	}
+
 	return &Monitor{
 		collectionID:      collectionID,
 		inactivityTimeout: inactivityTimeout,
 		mailer:            mailer,
+		slackURL:          slackURL,
 		nbiot:             client,
 		deviceInfo:        map[string]*deviceInfo{},
 	}, nil
@@ -133,6 +140,8 @@ func (m *Monitor) handlePingMessage(deviceID string, pm pb.PingMessage) {
 }
 
 func (m *Monitor) MonitorDevices() {
+	m.slackInfo("NB-IoT e2e server started")
+
 	for range time.NewTicker(5 * time.Second).C {
 		m.mu.Lock()
 		for id, info := range m.deviceInfo {
@@ -144,9 +153,9 @@ func (m *Monitor) MonitorDevices() {
 				body := fmt.Sprintf(
 					`Device info for last message from device:
 RSSI: %v dBm
-ArduinoNBIoT commit: <a href="https://github.com/ExploratoryEngineering/ArduinoNBIoT/commit/%s">%s</a>
-nbiot-e2e commit: <a href="https://github.com/telenordigital/nbiot-e2e/commit/%s">%s</a>
-`, info.rssi, info.nbiotLibHash, info.nbiotLibHash, info.e2eHash, info.e2eHash)
+ArduinoNBIoT commit: %x
+nbiot-e2e commit: %x
+`, info.rssi, info.nbiotLibHash, info.e2eHash)
 				go m.alert(id, fmt.Sprintf("not heard from for %s", m.inactivityTimeout), body)
 			}
 		}
@@ -175,7 +184,13 @@ func (m *Monitor) alert(deviceID, subject, body string) {
 		return
 	}
 
-	subject = fmt.Sprintf("NB-IoT e2e alert! Device %s (%q): %s", deviceID, device.Tags["name"], subject)
+	subject = fmt.Sprintf("NB-IoT e2e alert! Device %q (%s): %s", device.Tags["name"], deviceID, subject)
+	go m.sendEmails(deviceID, team, subject, body)
+	go m.slackAlert(deviceID, team, subject, body)
+
+}
+
+func (m *Monitor) sendEmails(deviceID string, team nbiot.Team, subject, body string) {
 	body = fmt.Sprintf(`%s
 <a href="https://nbiot.engineering/collection-overview/%s/devices/%s">Administer device</a>
 
@@ -206,4 +221,45 @@ You got this e-mail because you're in the <a href="https://nbiot.engineering/tea
 			})
 		}
 	}
+}
+
+func (m *Monitor) slackInfo(text string) error {
+	payload := slack.Payload{
+		Text:      text,
+		Username:  "e2e",
+		IconEmoji: ":robot_face:",
+	}
+	return m.slackSend(payload)
+}
+
+func (m *Monitor) slackAlert(deviceID string, team nbiot.Team, subject, body string) error {
+	color := "danger"
+	text := fmt.Sprintf("%v\n%v", subject, body)
+	attachment := slack.Attachment{
+		Color: &color,
+		Text:  &text,
+	}
+
+	deviceURL := fmt.Sprintf("https://nbiot.engineering/collection-overview/%s/devices/%s", m.collectionID, deviceID)
+	collectionURL := fmt.Sprintf("https://nbiot.engineering/collection-overview/%s/devices", m.collectionID)
+	attachment.AddAction(slack.Action{Type: "button", Text: "View device", Url: deviceURL, Style: "primary"})
+	attachment.AddAction(slack.Action{Type: "button", Text: "View collection", Url: collectionURL})
+
+	payload := slack.Payload{
+		Username:    "e2e",
+		IconEmoji:   ":robot_face:",
+		Attachments: []slack.Attachment{attachment},
+	}
+	return m.slackSend(payload)
+}
+
+func (m *Monitor) slackSend(payload slack.Payload) error {
+	if m.slackURL == "" {
+		return nil
+	}
+	err := slack.Send(m.slackURL, "", payload)
+	if len(err) > 0 {
+		return fmt.Errorf("%s", err)
+	}
+	return nil
 }

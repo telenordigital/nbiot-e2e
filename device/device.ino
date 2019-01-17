@@ -65,6 +65,12 @@ void setup() {
 		nbiot.begin(ublox);
 
 		Serial.println(F("starting nbiot e2e test"));
+
+		Serial.print(F("IMSI: "));
+		Serial.println(nbiot.imsi());
+		Serial.print(F("IMEI: "));
+		Serial.println(nbiot.imei());
+
 		Serial.println(F("waiting for connection"));
 		attempts = 0;
 		while (!nbiot.isConnected()) {

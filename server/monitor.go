@@ -125,11 +125,15 @@ func (m *Monitor) handlePingMessage(deviceID string, pm pb.PingMessage) {
 		}
 
 		if pm.E2EHash != info.e2eHash {
-			log.Printf("New version of nbiot-e2e detected\nhttps://github.com/telenordigital/nbiot-e2e/commit/%07x\n", pm.E2EHash)
+			msg := fmt.Sprintf("New version of nbiot-e2e detected\nhttps://github.com/telenordigital/nbiot-e2e/commit/%07x\n", pm.E2EHash)
+			log.Printf(msg)
+			m.slackInfo(msg)
 		}
 
 		if pm.NbiotLibHash != info.nbiotLibHash {
-			log.Printf("New version of ArduinoNBIoT library detected\nhttps://github.com/ExploratoryEngineering/ArduinoNBIoT/commit/%07x\n", pm.NbiotLibHash)
+			msg := fmt.Sprintf("New version of ArduinoNBIoT library detected\nhttps://github.com/ExploratoryEngineering/ArduinoNBIoT/commit/%07x\n", pm.NbiotLibHash)
+			log.Printf(msg)
+			m.slackInfo(msg)
 		}
 	}
 

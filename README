@@ -1,3 +1,1 @@
-# End to end testing for Telenor NB-IoT
-
-These tools enable automatic firmware updates on devices that periodically send NB-IoT data messages to a server that sends an alert whenever it detects dropped or duplicate messages.
+This repo has been moved to GitHub Enterprise

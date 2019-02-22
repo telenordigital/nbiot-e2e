@@ -1,8 +1,0 @@
-.DS_Store
-.vscode
-server/server
-*.elf
-*.hex
-arduino-service/arduino-service
-server/server-linux-amd64
-pb/protoc-gen-go
